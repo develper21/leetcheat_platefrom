@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Trophy, Clock, CheckCircle, XCircle, TrendingUp, Calendar } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/UI/card';
+import { Button } from '@/components/UI/button';
+import { Badge } from '@/components/UI/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/UI/tabs';
+import { ArrowLeft, Trophy, Clock, CheckCircle, XCircle, TrendingUp, Calendar, Code, Target, Zap, Award, BarChart3, Flame, Star } from 'lucide-react';
 import { User, Submission } from '@/lib/mockData';
 import { MockSubmissionAPI } from '@/lib/mockApi';
 
@@ -16,13 +16,7 @@ export default function Dashboard({ currentUser, onBack }: DashboardProps) {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (currentUser) {
-      loadSubmissions();
-    }
-  }, [currentUser]);
-
-  const loadSubmissions = async () => {
+  const loadSubmissions = useCallback(async () => {
     if (!currentUser) return;
     
     try {
@@ -33,7 +27,13 @@ export default function Dashboard({ currentUser, onBack }: DashboardProps) {
       console.error('Failed to load submissions:', error);
       setLoading(false);
     }
-  };
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (currentUser) {
+      loadSubmissions();
+    }
+  }, [currentUser, loadSubmissions]);
 
   if (!currentUser) {
     return (
@@ -64,8 +64,29 @@ export default function Dashboard({ currentUser, onBack }: DashboardProps) {
 
   const acceptedSubmissions = submissions.filter(s => s.status === 'Accepted');
   const totalProblems = 150; // Mock total problems count
-  const solvedCount = currentUser.solvedProblems.length;
+  const solvedCount = currentUser.solvedQuestions.length;
   const acceptanceRate = submissions.length > 0 ? Math.round((acceptedSubmissions.length / submissions.length) * 100) : 0;
+  
+  // Developer-focused stats
+  const easySolved = currentUser.solvedQuestions.filter(id => {
+    // Mock: assume first 50 problems are easy
+    return parseInt(id) <= 50;
+  }).length;
+  const mediumSolved = currentUser.solvedQuestions.filter(id => {
+    // Mock: assume 51-100 are medium
+    const numId = parseInt(id);
+    return numId > 50 && numId <= 100;
+  }).length;
+  const hardSolved = currentUser.solvedQuestions.filter(id => {
+    // Mock: assume 101-150 are hard
+    return parseInt(id) > 100;
+  }).length;
+  
+  const currentStreak = 7; // Mock streak
+  const longestStreak = 15; // Mock longest streak
+  const totalHours = Math.floor(solvedCount * 0.5); // Mock: 30 mins per problem
+  const avgTimePerProblem = submissions.length > 0 ? 
+    Math.round(submissions.reduce((acc, s) => acc + (s.runtime || 0), 0) / submissions.length) : 0;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -107,56 +128,246 @@ export default function Dashboard({ currentUser, onBack }: DashboardProps) {
           </CardContent>
         </Card>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
+        {/* Enhanced Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 border-green-200 dark:border-green-700">
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
-                <Trophy className="w-8 h-8 text-yellow-500" />
+                <Trophy className="w-8 h-8 text-green-600 dark:text-green-400" />
                 <div>
-                  <div className="text-2xl font-bold">{solvedCount}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Solved</div>
+                  <div className="text-2xl font-bold text-green-900 dark:text-green-100">{solvedCount}</div>
+                  <div className="text-sm text-green-700 dark:text-green-300">Problems Solved</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 border-blue-200 dark:border-blue-700">
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
-                <TrendingUp className="w-8 h-8 text-green-500" />
+                <Flame className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                 <div>
-                  <div className="text-2xl font-bold">{acceptanceRate}%</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Acceptance Rate</div>
+                  <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{currentStreak}</div>
+                  <div className="text-sm text-blue-700 dark:text-blue-300">Day Streak 🔥</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800 border-purple-200 dark:border-purple-700">
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
-                <Clock className="w-8 h-8 text-blue-500" />
+                <Zap className="w-8 h-8 text-purple-600 dark:text-purple-400" />
                 <div>
-                  <div className="text-2xl font-bold">{submissions.length}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Total Submissions</div>
+                  <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">{acceptanceRate}%</div>
+                  <div className="text-sm text-purple-700 dark:text-purple-300">Success Rate</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900 dark:to-orange-800 border-orange-200 dark:border-orange-700">
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
-                <Calendar className="w-8 h-8 text-purple-500" />
+                <Clock className="w-8 h-8 text-orange-600 dark:text-orange-400" />
                 <div>
-                  <div className="text-2xl font-bold">{Math.round((solvedCount / totalProblems) * 100)}%</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Progress</div>
+                  <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">{totalHours}h</div>
+                  <div className="text-sm text-orange-700 dark:text-orange-300">Practice Time</div>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Developer Progress Tabs */}
+        <Tabs defaultValue="overview" className="mb-8">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="skills">Skills</TabsTrigger>
+            <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsTrigger value="achievements">Achievements</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="overview" className="space-y-6">
+            {/* Difficulty Distribution */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5" />
+                  Problem Solving by Difficulty
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="flex items-center gap-2">
+                        <span className="w-3 h-3 bg-green-500 rounded-full"></span>
+                        Easy
+                      </span>
+                      <span className="font-medium">{easySolved} / 50</span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div className="bg-green-500 h-2 rounded-full" style={{ width: `${(easySolved / 50) * 100}%` }}></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="flex items-center gap-2">
+                        <span className="w-3 h-3 bg-yellow-500 rounded-full"></span>
+                        Medium
+                      </span>
+                      <span className="font-medium">{mediumSolved} / 50</span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${(mediumSolved / 50) * 100}%` }}></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="flex items-center gap-2">
+                        <span className="w-3 h-3 bg-red-500 rounded-full"></span>
+                        Hard
+                      </span>
+                      <span className="font-medium">{hardSolved} / 50</span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div className="bg-red-500 h-2 rounded-full" style={{ width: `${(hardSolved / 50) * 100}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="skills" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="w-5 h-5" />
+                  Skill Progress
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span>Algorithms</span>
+                        <span className="font-medium">75%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: '75%' }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span>Data Structures</span>
+                        <span className="font-medium">60%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div className="bg-green-500 h-2 rounded-full" style={{ width: '60%' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span>Problem Solving</span>
+                        <span className="font-medium">85%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div className="bg-purple-500 h-2 rounded-full" style={{ width: '85%' }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span>System Design</span>
+                        <span className="font-medium">45%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div className="bg-orange-500 h-2 rounded-full" style={{ width: '45%' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="activity" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  Recent Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <div>
+                      <div className="font-medium">Solved "Two Sum" problem</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">2 hours ago • 15ms</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <Code className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <div className="font-medium">Started "Binary Search" problem</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">5 hours ago</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                    <Award className="w-5 h-5 text-orange-600" />
+                    <div>
+                      <div className="font-medium">Achieved 7-day streak! 🔥</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">1 day ago</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="achievements" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Star className="w-5 h-5" />
+                  Achievements
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                    <Trophy className="w-8 h-8 text-yellow-600 mx-auto mb-2" />
+                    <div className="font-medium text-sm">First Problem</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">Solved your first problem</div>
+                  </div>
+                  <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                    <Flame className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                    <div className="font-medium text-sm">On Fire</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">7-day streak</div>
+                  </div>
+                  <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <Zap className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                    <div className="font-medium text-sm">Speed Demon</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">Solved in &lt;10ms</div>
+                  </div>
+                  <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                    <Star className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+                    <div className="font-medium text-sm">Problem Master</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">Solved 25 problems</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {/* Progress Bar */}
         <Card className="mb-8">
