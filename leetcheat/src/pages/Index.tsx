@@ -1,14 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Search, Filter, Code, Trophy, Users, BookOpen, LogIn, LogOut, User, Settings } from 'lucide-react';
-import QuestionCard from '@/components/QuestionCard';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/UI/card';
+import { Button } from '@/components/UI/button';
+import { Input } from '@/components/UI/input';
+import { Badge } from '@/components/UI/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/UI/dialog';
+import { Label } from '@/components/UI/label';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/UI/dropdown-menu';
+import { Search, Filter, Code, Trophy, Users, BookOpen, LogIn, LogOut, User, Settings, Moon, Sun, ChevronDown } from 'lucide-react';
 import { TheoryQuestion, User as UserType } from '@/lib/mockData';
 import { MockAuth, MockQuestionAPI } from '@/lib/mockApi';
+import CodeSutraHeader from '@/components/CodeSutraHeader';
+import ProfessionalProblemCard from '@/components/ProfessionalProblemCard';
+import EnhancedFilters from '@/components/EnhancedFilters';
+
+type PageType = 'questions' | 'question' | 'dashboard' | 'admin' | 'explore' | 'contest' | 'discuss';
+
+const isValidPage = (page: string): page is PageType => {
+  return ['questions', 'question', 'dashboard', 'admin', 'explore', 'contest', 'discuss'].includes(page);
+};
 
 export default function Index() {
   const [questions, setQuestions] = useState<TheoryQuestion[]>([]);
@@ -21,17 +30,31 @@ export default function Index() {
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [authForm, setAuthForm] = useState({ name: '', email: '', password: '' });
-  const [currentPage, setCurrentPage] = useState<'questions' | 'question' | 'dashboard' | 'admin'>('questions');
+  const [currentPage, setCurrentPage] = useState<PageType>('questions');
   const [selectedQuestionId, setSelectedQuestionId] = useState<string>('');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  
+  // Enhanced filters state
+  const [filters, setFilters] = useState({
+    difficulty: [],
+    category: [],
+    tags: [],
+    companies: [],
+    status: [],
+    timeComplexity: [],
+    spaceComplexity: []
+  });
 
   useEffect(() => {
     loadQuestions();
     setCurrentUser(MockAuth.getCurrentUser());
+    // Initialize theme
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
+      document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+    }
   }, []);
-
-  useEffect(() => {
-    filterQuestions();
-  }, [questions, searchTerm, difficultyFilter, categoryFilter]);
 
   const loadQuestions = async () => {
     try {
@@ -44,7 +67,7 @@ export default function Index() {
     }
   };
 
-  const filterQuestions = () => {
+  const filterQuestions = useCallback(() => {
     let filtered = questions;
 
     if (searchTerm) {
@@ -64,6 +87,15 @@ export default function Index() {
     }
 
     setFilteredQuestions(filtered);
+  }, [questions, searchTerm, difficultyFilter, categoryFilter]);
+
+  useEffect(() => {
+    filterQuestions();
+  }, [filterQuestions]);
+
+  const handleSolveQuestion = (questionId: string) => {
+    setSelectedQuestionId(questionId);
+    setCurrentPage('question');
   };
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -94,15 +126,17 @@ export default function Index() {
     setCurrentUser(null);
   };
 
-  const handleSolveQuestion = (questionId: string) => {
-    setSelectedQuestionId(questionId);
-    setCurrentPage('question');
-  };
-
   const getAllCategories = () => {
     const categories = new Set<string>();
     questions.forEach(q => categories.add(q.category));
     return Array.from(categories);
+  };
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
   };
 
   if (currentPage === 'question') {
@@ -114,6 +148,40 @@ export default function Index() {
           questionId={selectedQuestionId} 
           onBack={() => setCurrentPage('questions')}
           currentUser={currentUser}
+        />
+      </React.Suspense>
+    );
+  }
+
+  if (currentPage === 'explore') {
+    const ExplorePage = React.lazy(() => import('./Explore'));
+    return (
+      <React.Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+        <ExplorePage 
+          onBack={() => setCurrentPage('questions')}
+          onSolveQuestion={handleSolveQuestion}
+        />
+      </React.Suspense>
+    );
+  }
+
+  if (currentPage === 'contest') {
+    const ContestPage = React.lazy(() => import('./Contest'));
+    return (
+      <React.Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+        <ContestPage 
+          onBack={() => setCurrentPage('questions')}
+        />
+      </React.Suspense>
+    );
+  }
+
+  if (currentPage === 'discuss') {
+    const DiscussPage = React.lazy(() => import('./Discuss'));
+    return (
+      <React.Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+        <DiscussPage 
+          onBack={() => setCurrentPage('questions')}
         />
       </React.Suspense>
     );
@@ -144,247 +212,186 @@ export default function Index() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-blue-900">
-      {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <Code className="w-8 h-8 text-blue-600" />
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                InterviewPlate
-              </h1>
-            </div>
-
-            <nav className="flex items-center gap-4">
-              {currentUser ? (
-                <div className="flex items-center gap-4">
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => setCurrentPage('questions')}
-                    className="flex items-center gap-2"
-                  >
-                    <BookOpen className="w-4 h-4" />
-                    Questions
-                  </Button>
-                  
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => setCurrentPage('dashboard')}
-                    className="flex items-center gap-2"
-                  >
-                    <User className="w-4 h-4" />
-                    Dashboard
-                  </Button>
-
-                  {currentUser.role === 'admin' && (
-                    <Button 
-                      variant="ghost" 
-                      onClick={() => setCurrentPage('admin')}
-                      className="flex items-center gap-2"
-                    >
-                      <Settings className="w-4 h-4" />
-                      Admin
-                    </Button>
-                  )}
-
-                  <div className="flex items-center gap-2 px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full">
-                    <User className="w-4 h-4" />
-                    <span className="text-sm font-medium">{currentUser.name}</span>
-                    <Badge variant="secondary" className="text-xs">
-                      {currentUser.role}
-                    </Badge>
-                  </div>
-
-                  <Button variant="ghost" onClick={handleLogout} size="sm">
-                    <LogOut className="w-4 h-4" />
-                  </Button>
-                </div>
-              ) : (
-                <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
-                  <DialogTrigger asChild>
-                    <Button className="flex items-center gap-2">
-                      <LogIn className="w-4 h-4" />
-                      Sign In
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>
-                        {authMode === 'login' ? 'Sign In' : 'Create Account'}
-                      </DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleAuth} className="space-y-4">
-                      {authMode === 'register' && (
-                        <div>
-                          <Label htmlFor="name">Full Name</Label>
-                          <Input
-                            id="name"
-                            value={authForm.name}
-                            onChange={(e) => setAuthForm({...authForm, name: e.target.value})}
-                            required
-                          />
-                        </div>
-                      )}
-                      <div>
-                        <Label htmlFor="email">Email</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={authForm.email}
-                          onChange={(e) => setAuthForm({...authForm, email: e.target.value})}
-                          placeholder="Try: john@example.com or admin@example.com"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="password">Password</Label>
-                        <Input
-                          id="password"
-                          type="password"
-                          value={authForm.password}
-                          onChange={(e) => setAuthForm({...authForm, password: e.target.value})}
-                          placeholder="Use: password"
-                          required
-                        />
-                      </div>
-                      <Button type="submit" className="w-full">
-                        {authMode === 'login' ? 'Sign In' : 'Create Account'}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="w-full"
-                        onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
-                      >
-                        {authMode === 'login' ? 'Need an account? Sign up' : 'Already have an account? Sign in'}
-                      </Button>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              )}
-            </nav>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      {/* CodeSutra Header */}
+      <CodeSutraHeader
+        currentUser={currentUser}
+        currentPage={currentPage}
+        setCurrentPage={(page: string) => setCurrentPage(page as PageType)}
+        onLogin={() => setShowAuthDialog(true)}
+        onLogout={handleLogout}
+        theme={theme}
+        toggleTheme={toggleTheme}
+      />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Hero Section */}
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Master Theory Interviews
-          </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
-            Practice with real theoretical questions from top tech companies
-          </p>
-          
-          <div className="flex items-center justify-center gap-8 text-sm text-gray-600 dark:text-gray-400">
-            <div className="flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-yellow-500" />
-              <span>{questions.length} Questions</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-500" />
-              <span>Multiple Categories</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Code className="w-5 h-5 text-green-500" />
-              <span>Real-time Evaluation</span>
-            </div>
+      <div className="flex">
+        {/* Enhanced Filters Sidebar */}
+        <div className="hidden lg:block w-80 flex-shrink-0">
+          <div className="sticky top-20 p-4">
+            <EnhancedFilters
+              filters={filters}
+              onFiltersChange={setFilters}
+              onReset={() => setFilters({
+                difficulty: [],
+                category: [],
+                tags: [],
+                companies: [],
+                status: [],
+                timeComplexity: [],
+                spaceComplexity: []
+              })}
+            />
           </div>
-        </div>
 
-        {/* Filters */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="w-5 h-5" />
-              Filters
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    placeholder="Search questions..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+          {/* Stats Bar */}
+          <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-blue-600 text-white p-6 rounded-xl shadow-xl mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold">{filteredQuestions.length}</div>
+                <div className="text-sm text-white/90">Total Questions</div>
               </div>
-              
-              <select
-                value={difficultyFilter}
-                onChange={(e) => setDifficultyFilter(e.target.value)}
-                className="w-full sm:w-40 px-3 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-800 dark:border-gray-600"
-              >
-                <option value="">All Levels</option>
-                <option value="Easy">Easy</option>
-                <option value="Medium">Medium</option>
-                <option value="Hard">Hard</option>
-              </select>
-
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="w-full sm:w-40 px-3 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-800 dark:border-gray-600"
-              >
-                <option value="">All Categories</option>
-                {getAllCategories().map(category => (
-                  <option key={category} value={category}>{category}</option>
-                ))}
-              </select>
-
-              {(searchTerm || difficultyFilter || categoryFilter) && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSearchTerm('');
-                    setDifficultyFilter('');
-                    setCategoryFilter('');
-                  }}
-                >
-                  Clear
-                </Button>
-              )}
+              <div>
+                <div className="text-lg font-semibold text-emerald-300">
+                  {filteredQuestions.filter(q => q.difficulty === 'Easy').length}
+                </div>
+                <div className="text-sm text-white/90">Easy</div>
+              </div>
+              <div>
+                <div className="text-lg font-semibold text-amber-300">
+                  {filteredQuestions.filter(q => q.difficulty === 'Medium').length}
+                </div>
+                <div className="text-sm text-white/90">Medium</div>
+              </div>
+              <div>
+                <div className="text-lg font-semibold text-rose-300">
+                  {filteredQuestions.filter(q => q.difficulty === 'Hard').length}
+                </div>
+                <div className="text-sm text-white/90">Hard</div>
+              </div>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Questions Grid */}
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            {/* Search and Sort */}
+            <div className="flex items-center gap-3 mt-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70 w-4 h-4" />
+                <Input
+                  placeholder="Search problems..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-64 h-10 text-sm bg-white/20 border-white/30 text-white placeholder-white/70"
+                />
+              </div>
+              <select className="px-3 py-2 text-sm border border-white/30 rounded-lg bg-white/20 text-white">
+                <option>Most Recent</option>
+                <option>Most Popular</option>
+                <option>Hardest</option>
+                <option>Easiest</option>
+                <option>Acceptance Rate</option>
+              </select>
+            </div>
           </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredQuestions.map(question => (
-              <QuestionCard
-                key={question.id}
-                question={question}
-                isSolved={currentUser?.solvedQuestions.includes(question.id) || false}
-                onSolve={handleSolveQuestion}
+
+          {/* Problem Cards Grid */}
+          {loading ? (
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600 dark:text-gray-400">Loading problems...</p>
+              </div>
+            </div>
+          ) : filteredQuestions.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-gray-500 dark:text-gray-400 mb-4">
+                <Search className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+                <h3 className="text-lg font-medium mb-2">No problems found</h3>
+                <p>Try adjusting your search or filters</p>
+              </div>
+              <Button onClick={() => {
+                setSearchTerm('');
+                setFilters({
+                  difficulty: [],
+                  category: [],
+                  tags: [],
+                  companies: [],
+                  status: [],
+                  timeComplexity: [],
+                  spaceComplexity: []
+                });
+              }}>
+                Clear Filters
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {filteredQuestions.map((question) => (
+                <ProfessionalProblemCard
+                  key={question.id}
+                  question={question}
+                  isSolved={currentUser?.solvedQuestions.includes(question.id)}
+                  onSolve={handleSolveQuestion}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Auth Dialog */}
+      <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {authMode === 'login' ? 'Sign In' : 'Create Account'}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAuth} className="space-y-4">
+            {authMode === 'register' && (
+              <div>
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  value={authForm.name}
+                  onChange={(e) => setAuthForm({...authForm, name: e.target.value})}
+                  required
+                />
+              </div>
+            )}
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={authForm.email}
+                onChange={(e) => setAuthForm({...authForm, email: e.target.value})}
+                required
               />
-            ))}
+            </div>
+            <div>
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={authForm.password}
+                onChange={(e) => setAuthForm({...authForm, password: e.target.value})}
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full">
+              {authMode === 'login' ? 'Sign In' : 'Create Account'}
+            </Button>
+          </form>
+          <div className="text-center text-sm text-gray-600 dark:text-gray-400 mt-4">
+            {authMode === 'login' ? "Don't have an account? " : "Already have an account? "}
+            <button
+              onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+              className="text-blue-600 hover:text-blue-500 font-medium"
+            >
+              {authMode === 'login' ? 'Sign Up' : 'Sign In'}
+            </button>
           </div>
-        )}
-
-        {filteredQuestions.length === 0 && !loading && (
-          <div className="text-center py-12">
-            <Search className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              No questions found
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Try adjusting your search criteria or filters
-            </p>
-          </div>
-        )}
-      </main>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

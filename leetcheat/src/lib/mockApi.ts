@@ -1,4 +1,6 @@
-import { mockUsers, mockTheoryQuestions, mockSubmissions, User, TheoryQuestion, Submission } from './mockData';
+import { mockUsers, mockSubmissions, User, TheoryQuestion, Submission } from './mockData';
+import { comprehensiveQuestions } from './questionDatabase';
+import { comprehensiveTheoryQuestions } from './theoryQuestionDatabase';
 
 // Simulate API delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -77,7 +79,7 @@ export class MockQuestionAPI {
     search?: string;
   }): Promise<TheoryQuestion[]> {
     await delay(300);
-    let filtered = [...mockTheoryQuestions];
+    let filtered = [...comprehensiveQuestions, ...comprehensiveTheoryQuestions];
 
     if (filters?.difficulty) {
       filtered = filtered.filter(q => q.difficulty === filters.difficulty);
@@ -107,7 +109,7 @@ export class MockQuestionAPI {
 
   static async getQuestion(id: string): Promise<TheoryQuestion | null> {
     await delay(200);
-    return mockTheoryQuestions.find(q => q.id === id) || null;
+    return [...comprehensiveQuestions, ...comprehensiveTheoryQuestions].find(q => q.id === id) || null;
   }
 
   static async createQuestion(question: Omit<TheoryQuestion, 'id'>): Promise<TheoryQuestion> {
@@ -116,26 +118,23 @@ export class MockQuestionAPI {
       ...question,
       id: Date.now().toString()
     };
-    mockTheoryQuestions.push(newQuestion);
+    // Add to comprehensive database (in real app, would add to persistent storage)
     return newQuestion;
   }
 
   static async updateQuestion(id: string, updates: Partial<TheoryQuestion>): Promise<TheoryQuestion | null> {
     await delay(500);
-    const index = mockTheoryQuestions.findIndex(q => q.id === id);
-    if (index === -1) return null;
+    // In real app, would update in persistent storage
+    const question = [...comprehensiveQuestions, ...comprehensiveTheoryQuestions].find(q => q.id === id);
+    if (!question) return null;
     
-    mockTheoryQuestions[index] = { ...mockTheoryQuestions[index], ...updates };
-    return mockTheoryQuestions[index];
+    return { ...question, ...updates };
   }
 
   static async deleteQuestion(id: string): Promise<boolean> {
-    await delay(300);
-    const index = mockTheoryQuestions.findIndex(q => q.id === id);
-    if (index === -1) return false;
-    
-    mockTheoryQuestions.splice(index, 1);
-    return true;
+    await delay(500);
+    // In real app, would delete from persistent storage
+    return [...comprehensiveQuestions, ...comprehensiveTheoryQuestions].find(q => q.id === id) !== undefined;
   }
 }
 
@@ -152,7 +151,7 @@ export class MockAnswerEvaluator {
   }> {
     await delay(1000 + Math.random() * 2000); // Simulate evaluation time
 
-    const question = mockTheoryQuestions.find(q => q.id === questionId);
+    const question = [...comprehensiveQuestions, ...comprehensiveTheoryQuestions].find(q => q.id === questionId);
     if (!question) {
       return {
         isCorrect: false,
@@ -215,11 +214,16 @@ export class MockAnswerEvaluator {
       id: `sub-${Date.now()}`,
       userId: user.id,
       questionId,
+      problemId: questionId, // Use questionId as problemId for theory questions
       answer: userAnswer,
       isCorrect: evaluation.isCorrect,
       score: evaluation.score,
       timestamp: new Date(),
-      timeTaken
+      timeTaken,
+      status: evaluation.isCorrect ? 'Accepted' : 'Wrong Answer',
+      language: 'text', // Theory questions are text-based
+      runtime: 0, // Not applicable for theory questions
+      memory: 0 // Not applicable for theory questions
     };
 
     mockSubmissions.push(submission);

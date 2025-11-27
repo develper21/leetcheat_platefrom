@@ -1,7 +1,7 @@
 import React from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/UI/card';
+import { Badge } from '@/components/UI/badge';
+import { Button } from '@/components/UI/button';
 import { CheckCircle, Circle, TrendingUp, Users, ThumbsUp, BookOpen } from 'lucide-react';
 import { TheoryQuestion } from '@/lib/mockData';
 

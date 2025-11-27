@@ -31,11 +31,16 @@ export interface Submission {
   id: string;
   userId: string;
   questionId: string;
+  problemId: string;
   answer: string;
   isCorrect: boolean;
   score: number;
   timestamp: Date;
   timeTaken: number; // in seconds
+  status: 'Accepted' | 'Wrong Answer' | 'Time Limit Exceeded' | 'Memory Limit Exceeded';
+  language: string;
+  runtime: number; // in milliseconds
+  memory: number; // in MB
 }
 
 export const mockUsers: User[] = [
@@ -169,11 +174,31 @@ export const mockSubmissions: Submission[] = [
     id: 'sub-1',
     userId: '1',
     questionId: '1',
+    problemId: '1',
     answer: 'The four principles are encapsulation, inheritance, polymorphism, and abstraction.',
     isCorrect: true,
     score: 85,
     timestamp: new Date('2024-01-15T10:30:00Z'),
-    timeTaken: 180
+    timeTaken: 180,
+    status: 'Accepted',
+    language: 'javascript',
+    runtime: 15,
+    memory: 32
+  },
+  {
+    id: 'sub-2',
+    userId: '1',
+    questionId: '2',
+    problemId: '2',
+    answer: '1NF, 2NF, and 3NF are different levels of database normalization.',
+    isCorrect: false,
+    score: 45,
+    timestamp: new Date('2024-01-16T14:20:00Z'),
+    timeTaken: 240,
+    status: 'Wrong Answer',
+    language: 'python',
+    runtime: 25,
+    memory: 28
   }
 ];
 

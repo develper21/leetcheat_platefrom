@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card } from '@/components/UI/card';
+import { Button } from '@/components/UI/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/UI/select';
 import { Play, Send, RotateCcw } from 'lucide-react';
 import { languages, languageTemplates } from '@/lib/mockData';
 

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/UI/card';
+import { Button } from '@/components/UI/button';
+import { Badge } from '@/components/UI/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/UI/tabs';
+import { Separator } from '@/components/UI/separator';
 import { ArrowLeft, Clock, HardDrive, CheckCircle, XCircle, AlertCircle, Play } from 'lucide-react';
 import CodeEditor from '@/components/CodeEditor';
 import { Problem as ProblemType, User, Submission, languageTemplates } from '@/lib/mockData';
