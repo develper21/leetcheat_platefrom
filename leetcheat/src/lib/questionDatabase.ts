@@ -316,7 +316,7 @@ function generateWebDevQuestions(count: number): TheoryQuestion[] {
   for (let i = 0; i < count; i++) {
     const difficulty = difficulties[i % 3];
     const topic = topics[i % topics.length];
-    const id = `web-${i + 1}`;
+    const id = `comp-web-${i + 1}`;
     
     questions.push({
       id,
