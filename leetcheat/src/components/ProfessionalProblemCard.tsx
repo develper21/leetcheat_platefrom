@@ -31,18 +31,18 @@ export default function ProfessionalProblemCard({
 
   const getCategoryIcon = (category: string) => {
     switch (category.toLowerCase()) {
-      case 'arrays': return <Code2 className="w-4 h-4" />;
-      case 'data structures': return <Database className="w-4 h-4" />;
-      case 'algorithms': return <Brain className="w-4 h-4" />;
-      case 'database': return <Database className="w-4 h-4" />;
-      case 'system design': return <Globe className="w-4 h-4" />;
-      case 'programming concepts': return <Code2 className="w-4 h-4" />;
-      case 'networking': return <Globe className="w-4 h-4" />;
-      case 'operating systems': return <Database className="w-4 h-4" />;
-      case 'web development': return <Globe className="w-4 h-4" />;
-      case 'machine learning': return <Brain className="w-4 h-4" />;
-      case 'cloud computing': return <Globe className="w-4 h-4" />;
-      default: return <BookOpen className="w-4 h-4" />;
+      case 'arrays': return <Code2 className="w-4 h-4" key={`icon-arrays-${question.id}`} />;
+      case 'data structures': return <Database className="w-4 h-4" key={`icon-data-structures-${question.id}`} />;
+      case 'algorithms': return <Brain className="w-4 h-4" key={`icon-algorithms-${question.id}`} />;
+      case 'database': return <Database className="w-4 h-4" key={`icon-database-${question.id}`} />;
+      case 'system design': return <Globe className="w-4 h-4" key={`icon-system-design-${question.id}`} />;
+      case 'programming concepts': return <Code2 className="w-4 h-4" key={`icon-programming-concepts-${question.id}`} />;
+      case 'networking': return <Globe className="w-4 h-4" key={`icon-networking-${question.id}`} />;
+      case 'operating systems': return <Database className="w-4 h-4" key={`icon-operating-systems-${question.id}`} />;
+      case 'web development': return <Globe className="w-4 h-4" key={`icon-web-development-${question.id}`} />;
+      case 'machine learning': return <Brain className="w-4 h-4" key={`icon-machine-learning-${question.id}`} />;
+      case 'cloud computing': return <Globe className="w-4 h-4" key={`icon-cloud-computing-${question.id}`} />;
+      default: return <BookOpen className="w-4 h-4" key={`icon-default-${question.id}`} />;
     }
   };
 
@@ -68,6 +68,16 @@ export default function ProfessionalProblemCard({
     return num.toString();
   };
 
+  // Calculate view count once instead of generating random numbers on each render
+  const viewCount = React.useMemo(() => {
+    return question.likes + question.dislikes + Math.floor(Math.random() * 2000);
+  }, [question.likes, question.dislikes]);
+
+  // Calculate estimated time once instead of generating random numbers on each render
+  const estimatedTime = React.useMemo(() => {
+    return Math.floor(Math.random() * 45 + 5);
+  }, []);
+
   return (
     <Card className="group hover:shadow-xl transition-all duration-300 cursor-pointer border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 bg-white dark:bg-slate-900/50 backdrop-blur-sm">
       <CardHeader className="pb-4">
@@ -76,12 +86,12 @@ export default function ProfessionalProblemCard({
             {/* Status Icons */}
             <div className="flex flex-col items-center mt-1">
               {isSolved ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                <CheckCircle2 className="w-5 h-5 text-emerald-500" key={`check-circle-${question.id}`} />
               ) : (
-                <Circle className="w-5 h-5 text-slate-400" />
+                <Circle className="w-5 h-5 text-slate-400" key={`circle-${question.id}`} />
               )}
               {isBookmarked && (
-                <Star className="w-4 h-4 text-amber-500 mt-1" fill="currentColor" />
+                <Star className="w-4 h-4 text-amber-500 mt-1" fill="currentColor" key={`star-${question.id}`} />
               )}
             </div>
 
@@ -114,7 +124,7 @@ export default function ProfessionalProblemCard({
               {/* Tags */}
               <div className="flex flex-wrap gap-1 mt-3">
                 {question.tags.slice(0, 3).map((tag, index) => (
-                  <Badge key={index} variant="outline" className="text-xs px-2 py-0.5 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400">
+                  <Badge key={`${tag}-${index}-${question.id}`} variant="outline" className="text-xs px-2 py-0.5 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400">
                     {tag}
                   </Badge>
                 ))}
@@ -149,7 +159,7 @@ export default function ProfessionalProblemCard({
                 }}
                 className="p-1.5 h-auto hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                <Star className={`w-4 h-4 ${isBookmarked ? 'text-amber-500 fill-current' : 'text-slate-400'}`} />
+                <Star className={`w-4 h-4 ${isBookmarked ? 'text-amber-500 fill-current' : 'text-slate-400'}`} key={`bookmark-star-${question.id}`} />
               </Button>
             )}
           </div>
@@ -161,17 +171,17 @@ export default function ProfessionalProblemCard({
           {/* Left Stats */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
-              <TrendingUp className="w-3 h-3" />
+              <TrendingUp className="w-3 h-3" key={`trending-up-${question.id}`} />
               <span className={`font-semibold ${getAcceptanceColor(question.acceptanceRate)}`}>
                 {question.acceptanceRate}%
               </span>
             </div>
             <div className="flex items-center gap-1">
-              <Users className="w-3 h-3" />
+              <Users className="w-3 h-3" key={`users-${question.id}`} />
               <span>{formatNumber(question.submissions)}</span>
             </div>
             <div className="flex items-center gap-1">
-              <ThumbsUp className="w-3 h-3" />
+              <ThumbsUp className="w-3 h-3" key={`thumbs-up-${question.id}`} />
               <span>{formatNumber(question.likes)}</span>
             </div>
           </div>
@@ -179,15 +189,15 @@ export default function ProfessionalProblemCard({
           {/* Right Stats */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
-              <Eye className="w-3 h-3" />
-              <span>{formatNumber(question.likes + question.dislikes + Math.floor(Math.random() * 2000))}</span>
+              <Eye className="w-3 h-3" key={`eye-${question.id}`} />
+              <span>{formatNumber(viewCount)}</span>
             </div>
             <div className="flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              <span>{Math.floor(Math.random() * 45 + 5)}m</span>
+              <Clock className="w-3 h-3" key={`clock-${question.id}`} />
+              <span>{estimatedTime}m</span>
             </div>
             <div className="flex items-center gap-1">
-              <Zap className="w-3 h-3" />
+              <Zap className="w-3 h-3" key={`zap-${question.id}`} />
               <span className="text-xs font-mono">
                 {question.difficulty === 'Easy' ? 'O(1)' : question.difficulty === 'Medium' ? 'O(n)' : 'O(n²)'}
               </span>
@@ -197,10 +207,10 @@ export default function ProfessionalProblemCard({
 
         {/* Company Tags */}
         <div className="flex items-center gap-2 mt-3">
-          <Award className="w-3 h-3 text-slate-400" />
+          <Award className="w-3 h-3 text-slate-400" key={`award-${question.id}`} />
           <span className="text-xs text-slate-500 dark:text-slate-400">Asked at:</span>
           {question.companies.slice(0, 2).map((company, index) => (
-            <Badge key={index} variant="secondary" className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+            <Badge key={`${company}-${index}-${question.id}`} variant="secondary" className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
               {company}
             </Badge>
           ))}
