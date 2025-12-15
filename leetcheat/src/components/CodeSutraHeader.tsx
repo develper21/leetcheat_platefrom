@@ -37,6 +37,11 @@ export default function CodeSutraHeader({
     { name: 'Dashboard', value: 'dashboard', icon: User, color: 'from-primary-navy to-primary-saffron' },
   ];
 
+  // Add a unique key for each navigation item to prevent key conflicts
+  const getUniqueKey = (item: any, index: number) => {
+    return `${item.value}-${index}`;
+  };
+
   return (
     <header className="bg-gradient-to-r from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 backdrop-blur-sm">
       <div className="max-w-full px-4">
@@ -53,13 +58,17 @@ export default function CodeSutraHeader({
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-1">
-              {navigation.map((item) => {
+              {navigation.map((item, index) => {
                 const Icon = item.icon;
                 const isActive = currentPage === item.value;
                 return (
                   <button
-                    key={item.value}
-                    onClick={() => setCurrentPage(item.value)}
+                    key={getUniqueKey(item, index)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setCurrentPage(item.value);
+                    }}
                     className={`group relative flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                       isActive
                         ? 'text-white shadow-lg'
@@ -106,7 +115,10 @@ export default function CodeSutraHeader({
             <Button
               variant="ghost"
               size="sm"
-              onClick={toggleTheme}
+              onClick={(e) => {
+                e.preventDefault();
+                toggleTheme();
+              }}
               className="w-10 h-10 p-0 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               {theme === 'light' ? (
@@ -160,24 +172,39 @@ export default function CodeSutraHeader({
                     </div>
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setCurrentPage('dashboard')} className="hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <DropdownMenuItem onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setCurrentPage('dashboard');
+                  }} className="hover:bg-gray-100 dark:hover:bg-gray-700">
                     <User className="w-4 h-4 mr-3 text-gray-500" />
                     <span>Dashboard</span>
                     <Target className="w-4 h-4 ml-auto text-gray-400" />
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <DropdownMenuItem onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }} className="hover:bg-gray-100 dark:hover:bg-gray-700">
                     <Settings className="w-4 h-4 mr-3 text-gray-500" />
                     <span>Settings</span>
                   </DropdownMenuItem>
                   {currentUser.role === 'admin' && (
-                    <DropdownMenuItem onClick={() => setCurrentPage('admin')} className="hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <DropdownMenuItem onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setCurrentPage('admin');
+                    }} className="hover:bg-gray-100 dark:hover:bg-gray-700">
                       <Settings className="w-4 h-4 mr-3 text-gray-500" />
                       <span>Admin Panel</span>
                       <Badge className="ml-auto text-xs bg-primary-saffron text-white">PRO</Badge>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={onLogout} className="hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 dark:text-red-400">
+                  <DropdownMenuItem onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onLogout();
+                  }} className="hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 dark:text-red-400">
                     <LogOut className="w-4 h-4 mr-3" />
                     <span>Sign Out</span>
                   </DropdownMenuItem>
@@ -185,7 +212,11 @@ export default function CodeSutraHeader({
               </DropdownMenu>
             ) : (
               <BrandButton 
-                onClick={onLogin}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onLogin();
+                }}
                 variant="primary"
                 size="medium"
               >
@@ -199,7 +230,11 @@ export default function CodeSutraHeader({
               variant="ghost"
               size="sm"
               className="md:hidden w-10 h-10 p-0 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setMobileMenuOpen(!mobileMenuOpen);
+              }}
             >
               {mobileMenuOpen ? (
                 <X className="w-4 h-4 text-gray-600 dark:text-gray-300" />
@@ -214,13 +249,15 @@ export default function CodeSutraHeader({
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-gray-200 dark:border-gray-700 py-4 bg-white dark:bg-gray-900">
             <div className="space-y-2">
-              {navigation.map((item) => {
+              {navigation.map((item, index) => {
                 const Icon = item.icon;
                 const isActive = currentPage === item.value;
                 return (
                   <button
-                    key={item.value}
-                    onClick={() => {
+                    key={getUniqueKey(item, index)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                       setCurrentPage(item.value);
                       setMobileMenuOpen(false);
                     }}
