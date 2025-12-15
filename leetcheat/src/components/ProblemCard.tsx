@@ -3,10 +3,10 @@ import { Card, CardContent, CardHeader } from '@/components/UI/card';
 import { Badge } from '@/components/UI/badge';
 import { Button } from '@/components/UI/button';
 import { CheckCircle, Circle, TrendingUp, Users, ThumbsUp } from 'lucide-react';
-import { Problem } from '@/lib/mockData';
+import { TheoryQuestion } from '@/lib/mockData';
 
 interface ProblemCardProps {
-  problem: Problem;
+  problem: TheoryQuestion;
   isSolved?: boolean;
   onSolve: (problemId: string) => void;
 }
