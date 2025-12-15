@@ -326,7 +326,7 @@ export default function Index() {
             <div className="grid gap-4">
               {filteredQuestions.map((question) => (
                 <ProfessionalProblemCard
-                  key={question.id}
+                  key={`problem-card-${question.id}`}
                   question={question}
                   isSolved={currentUser?.solvedQuestions.includes(question.id)}
                   onSolve={handleSolveQuestion}
