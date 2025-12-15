@@ -214,3 +214,106 @@ export const categories = [
   'Web Development',
   'Mobile Development'
 ];
+
+// Language definitions for code editor
+export const languages = [
+  { id: 'python', name: 'Python' },
+  { id: 'javascript', name: 'JavaScript' },
+  { id: 'java', name: 'Java' },
+  { id: 'cpp', name: 'C++' },
+  { id: 'csharp', name: 'C#' },
+  { id: 'go', name: 'Go' },
+  { id: 'rust', name: 'Rust' },
+  { id: 'typescript', name: 'TypeScript' }
+];
+
+// Language templates for code editor
+export const languageTemplates = {
+  python: `def solution():
+    # Write your solution here
+    pass
+
+# Test your solution
+print(solution())`,
+  
+  javascript: `function solution() {
+    // Write your solution here
+}
+
+// Test your solution
+console.log(solution());`,
+  
+  java: `public class Solution {
+    public static void main(String[] args) {
+        Solution sol = new Solution();
+        // Test your solution
+        System.out.println(sol.solution());
+    }
+    
+    public Object solution() {
+        // Write your solution here
+        return null;
+    }
+}`,
+  
+  cpp: `#include <iostream>
+#include <vector>
+using namespace std;
+
+// Write your solution here
+auto solution() {
+    return 0;
+}
+
+int main() {
+    // Test your solution
+    cout << solution() << endl;
+    return 0;
+}`,
+  
+  csharp: `using System;
+
+public class Solution {
+    public static void Main() {
+        Solution sol = new Solution();
+        // Test your solution
+        Console.WriteLine(sol.Solution());
+    }
+    
+    public object Solution() {
+        // Write your solution here
+        return null;
+    }
+}`,
+  
+  go: `package main
+
+import "fmt"
+
+// Write your solution here
+func solution() interface{} {
+    return nil
+}
+
+func main() {
+    // Test your solution
+    fmt.Println(solution())
+}`,
+  
+  rust: `fn solution() -> i32 {
+    // Write your solution here
+    0
+}
+
+fn main() {
+    // Test your solution
+    println!("{}", solution());
+}`,
+  
+  typescript: `function solution(): any {
+    // Write your solution here
+}
+
+// Test your solution
+console.log(solution());`
+};
