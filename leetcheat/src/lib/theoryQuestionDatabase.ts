@@ -94,7 +94,7 @@ function generateDSAQuestions(count: number): TheoryQuestion[] {
   for (let i = 0; i < count; i++) {
     const difficulty = difficulties[i % 3];
     const topic = topics[i % topics.length];
-    const id = `dsa-${i + 1}`;
+    const id = `theory-dsa-${i + 1}`;
     
     questions.push({
       id,
@@ -132,7 +132,7 @@ function generateDatabaseQuestions(count: number): TheoryQuestion[] {
   for (let i = 0; i < count; i++) {
     const difficulty = difficulties[i % 3];
     const topic = topics[i % topics.length];
-    const id = `db-${i + 1}`;
+    const id = `theory-db-${i + 1}`;
     
     questions.push({
       id,
@@ -170,7 +170,7 @@ function generateOSQuestions(count: number): TheoryQuestion[] {
   for (let i = 0; i < count; i++) {
     const difficulty = difficulties[i % 3];
     const topic = topics[i % topics.length];
-    const id = `os-${i + 1}`;
+    const id = `theory-os-${i + 1}`;
     
     questions.push({
       id,
@@ -208,7 +208,7 @@ function generateNetworkQuestions(count: number): TheoryQuestion[] {
   for (let i = 0; i < count; i++) {
     const difficulty = difficulties[i % 3];
     const topic = topics[i % topics.length];
-    const id = `net-${i + 1}`;
+    const id = `theory-net-${i + 1}`;
     
     questions.push({
       id,
@@ -285,7 +285,7 @@ function generateWebTechQuestions(count: number): TheoryQuestion[] {
   for (let i = 0; i < count; i++) {
     const difficulty = difficulties[i % 3];
     const topic = topics[i % topics.length];
-    const id = `web-${i + 1}`;
+    const id = `theory-web-${i + 1}`;
     
     questions.push({
       id,
@@ -323,7 +323,7 @@ function generateCloudDevOps(count: number): TheoryQuestion[] {
   for (let i = 0; i < count; i++) {
     const difficulty = difficulties[i % 3];
     const topic = topics[i % topics.length];
-    const id = `cloud-${i + 1}`;
+    const id = `theory-cloud-${i + 1}`;
     
     questions.push({
       id,
@@ -362,7 +362,7 @@ function generateMLQuestions(count: number): TheoryQuestion[] {
   for (let i = 0; i < count; i++) {
     const difficulty = difficulties[i % 3];
     const topic = topics[i % topics.length];
-    const id = `ml-${i + 1}`;
+    const id = `theory-ml-${i + 1}`;
     
     questions.push({
       id,
@@ -399,7 +399,7 @@ function generateSystemDesign(count: number): TheoryQuestion[] {
   for (let i = 0; i < count; i++) {
     const difficulty = difficulties[i % 3];
     const system = systems[i % systems.length];
-    const id = `sd-${i + 1}`;
+    const id = `theory-sd-${i + 1}`;
     
     questions.push({
       id,
