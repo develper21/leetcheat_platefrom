@@ -89,27 +89,28 @@ export default function EnhancedFilters({ filters, onFiltersChange, onReset }: E
         <button
           onClick={() => toggleSection(sectionKey)}
           className="w-full flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          key={`filter-section-button-${sectionKey}`}
         >
           <div className="flex items-center gap-2">
-            {Icon && <Icon className="w-4 h-4 text-gray-500" />}
+            {Icon && <Icon className="w-4 h-4 text-gray-500" key={`filter-icon-${sectionKey}`} />}
             <span className="font-medium text-sm text-gray-900 dark:text-white">{title}</span>
             {filters[sectionKey].length > 0 && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-xs" key={`filter-badge-${sectionKey}`}>
                 {filters[sectionKey].length}
               </Badge>
             )}
           </div>
           {isExpanded ? (
-            <ChevronUp className="w-4 h-4 text-gray-500" />
+            <ChevronUp className="w-4 h-4 text-gray-500" key={`chevron-up-${sectionKey}`} />
           ) : (
-            <ChevronDown className="w-4 h-4 text-gray-500" />
+            <ChevronDown className="w-4 h-4 text-gray-500" key={`chevron-down-${sectionKey}`} />
           )}
         </button>
 
         {isExpanded && (
           <div className="px-3 pb-3 space-y-2">
-            {displayItems.map((item) => (
-              <label key={item} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 p-1 rounded">
+            {displayItems.map((item, index) => (
+              <label key={`${item}-${index}-${sectionKey}`} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 p-1 rounded">
                 <input
                   type="checkbox"
                   checked={filters[sectionKey].includes(item)}
@@ -135,10 +136,10 @@ export default function EnhancedFilters({ filters, onFiltersChange, onReset }: E
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4" />
+            <Filter className="w-4 h-4" key="filter-icon-header" />
             <CardTitle className="text-lg">Filters</CardTitle>
             {getActiveFiltersCount() > 0 && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-xs" key="active-filters-badge">
                 {getActiveFiltersCount()}
               </Badge>
             )}
@@ -149,6 +150,7 @@ export default function EnhancedFilters({ filters, onFiltersChange, onReset }: E
             onClick={onReset}
             className="text-xs"
             disabled={getActiveFiltersCount() === 0}
+            key="reset-button"
           >
             Reset
           </Button>
@@ -159,7 +161,7 @@ export default function EnhancedFilters({ filters, onFiltersChange, onReset }: E
         {/* Search */}
         <div className="p-3 border-b border-gray-200 dark:border-gray-700">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" key="search-icon" />
             <Input
               placeholder="Search filters..."
               value={searchTerm}
@@ -177,6 +179,7 @@ export default function EnhancedFilters({ filters, onFiltersChange, onReset }: E
               size="sm"
               onClick={() => handleFilterChange('difficulty', 'Easy', !filters.difficulty.includes('Easy'))}
               className={`text-xs ${filters.difficulty.includes('Easy') ? 'bg-green-100 border-green-300 text-green-700' : ''}`}
+              key="easy-filter-button"
             >
               Easy
             </Button>
@@ -185,6 +188,7 @@ export default function EnhancedFilters({ filters, onFiltersChange, onReset }: E
               size="sm"
               onClick={() => handleFilterChange('difficulty', 'Medium', !filters.difficulty.includes('Medium'))}
               className={`text-xs ${filters.difficulty.includes('Medium') ? 'bg-yellow-100 border-yellow-300 text-yellow-700' : ''}`}
+              key="medium-filter-button"
             >
               Medium
             </Button>
@@ -193,6 +197,7 @@ export default function EnhancedFilters({ filters, onFiltersChange, onReset }: E
               size="sm"
               onClick={() => handleFilterChange('difficulty', 'Hard', !filters.difficulty.includes('Hard'))}
               className={`text-xs ${filters.difficulty.includes('Hard') ? 'bg-red-100 border-red-300 text-red-700' : ''}`}
+              key="hard-filter-button"
             >
               Hard
             </Button>
@@ -205,6 +210,7 @@ export default function EnhancedFilters({ filters, onFiltersChange, onReset }: E
           sectionKey="difficulty"
           items={difficulties}
           icon={Target}
+          key="difficulty-filter-section"
         />
 
         <FilterSection
@@ -213,6 +219,7 @@ export default function EnhancedFilters({ filters, onFiltersChange, onReset }: E
           items={categories}
           icon={Star}
           maxItems={6}
+          key="category-filter-section"
         />
 
         <FilterSection
@@ -223,6 +230,7 @@ export default function EnhancedFilters({ filters, onFiltersChange, onReset }: E
           )}
           icon={Target}
           maxItems={8}
+          key="tags-filter-section"
         />
 
         <FilterSection
@@ -233,6 +241,7 @@ export default function EnhancedFilters({ filters, onFiltersChange, onReset }: E
           )}
           icon={Star}
           maxItems={6}
+          key="companies-filter-section"
         />
 
         <FilterSection
@@ -240,6 +249,7 @@ export default function EnhancedFilters({ filters, onFiltersChange, onReset }: E
           sectionKey="status"
           items={statusOptions}
           icon={Clock}
+          key="status-filter-section"
         />
 
         <FilterSection
@@ -247,6 +257,7 @@ export default function EnhancedFilters({ filters, onFiltersChange, onReset }: E
           sectionKey="timeComplexity"
           items={timeComplexities}
           icon={Clock}
+          key="time-complexity-filter-section"
         />
 
         <FilterSection
@@ -254,6 +265,7 @@ export default function EnhancedFilters({ filters, onFiltersChange, onReset }: E
           sectionKey="spaceComplexity"
           items={spaceComplexities}
           icon={Target}
+          key="space-complexity-filter-section"
         />
       </CardContent>
     </Card>
