@@ -187,7 +187,7 @@ export const BrandButton = ({
   variant?: "primary" | "secondary" | "outline";
   size?: "small" | "medium" | "large";
   children: React.ReactNode;
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }) => {
   const baseClasses = "font-semibold rounded-xl transition-all duration-200";
   
