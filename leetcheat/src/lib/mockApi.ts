@@ -1,4 +1,5 @@
-import { mockUsers, mockSubmissions, User, TheoryQuestion, Submission } from './mockData';
+import type { User, TheoryQuestion, Submission } from '@/types';
+import { mockUsers, mockSubmissions } from './mockData';
 import { comprehensiveQuestions } from './questionDatabase';
 import { comprehensiveTheoryQuestions } from './theoryQuestionDatabase';
 
@@ -32,7 +33,6 @@ export class MockAuth {
       solvedQuestions: [],
       submissions: 0
     };
-    mockUsers.push(newUser);
     this.currentUser = newUser;
     const token = btoa(JSON.stringify({ userId: newUser.id, exp: Date.now() + 86400000 }));
     localStorage.setItem('auth_token', token);
@@ -49,205 +49,80 @@ export class MockAuth {
   static getCurrentUser(): User | null {
     if (this.currentUser) return this.currentUser;
     
-    const stored = localStorage.getItem('current_user');
-    if (stored) {
-      this.currentUser = JSON.parse(stored);
+    const userStr = localStorage.getItem('current_user');
+    if (userStr) {
+      this.currentUser = JSON.parse(userStr);
       return this.currentUser;
     }
     return null;
   }
-
-  static isAuthenticated(): boolean {
-    const token = localStorage.getItem('auth_token');
-    if (!token) return false;
-    
-    try {
-      const payload = JSON.parse(atob(token));
-      return payload.exp > Date.now();
-    } catch {
-      return false;
-    }
-  }
 }
 
-// Mock API for theory questions
+// Mock Question API
 export class MockQuestionAPI {
-  static async getQuestions(filters?: {
-    difficulty?: string;
-    category?: string;
-    tags?: string[];
-    search?: string;
-  }): Promise<TheoryQuestion[]> {
-    await delay(300);
-    let filtered = [...comprehensiveQuestions, ...comprehensiveTheoryQuestions];
+  private static questions: TheoryQuestion[] | null = null;
 
-    if (filters?.difficulty) {
-      filtered = filtered.filter(q => q.difficulty === filters.difficulty);
+  static async getAllQuestions(): Promise<TheoryQuestion[]> {
+    await delay(800);
+    if (!this.questions) {
+      this.questions = [...comprehensiveQuestions, ...comprehensiveTheoryQuestions];
     }
-
-    if (filters?.category) {
-      filtered = filtered.filter(q => q.category === filters.category);
-    }
-
-    if (filters?.tags?.length) {
-      filtered = filtered.filter(q => 
-        filters.tags!.some(tag => q.tags.includes(tag))
-      );
-    }
-
-    if (filters?.search) {
-      const search = filters.search.toLowerCase();
-      filtered = filtered.filter(q => 
-        q.title.toLowerCase().includes(search) ||
-        q.description.toLowerCase().includes(search) ||
-        q.question.toLowerCase().includes(search)
-      );
-    }
-
-    return filtered;
+    return this.questions;
   }
 
   static async getQuestion(id: string): Promise<TheoryQuestion | null> {
-    await delay(200);
-    return [...comprehensiveQuestions, ...comprehensiveTheoryQuestions].find(q => q.id === id) || null;
+    const questions = await this.getAllQuestions();
+    return questions.find(q => q.id === id) || null;
   }
 
   static async createQuestion(question: Omit<TheoryQuestion, 'id'>): Promise<TheoryQuestion> {
-    await delay(500);
+    const questions = await this.getAllQuestions();
     const newQuestion: TheoryQuestion = {
       ...question,
       id: Date.now().toString()
     };
-    // Add to comprehensive database (in real app, would add to persistent storage)
+    questions.push(newQuestion);
     return newQuestion;
   }
 
-  static async updateQuestion(id: string, updates: Partial<TheoryQuestion>): Promise<TheoryQuestion | null> {
-    await delay(500);
-    // In real app, would update in persistent storage
-    const question = [...comprehensiveQuestions, ...comprehensiveTheoryQuestions].find(q => q.id === id);
-    if (!question) return null;
-    
-    return { ...question, ...updates };
+  static async updateQuestion(id: string, question: Partial<TheoryQuestion>): Promise<TheoryQuestion | null> {
+    const questions = await this.getAllQuestions();
+    const index = questions.findIndex(q => q.id === id);
+    if (index !== -1) {
+      questions[index] = { ...questions[index], ...question };
+      return questions[index];
+    }
+    return null;
   }
 
   static async deleteQuestion(id: string): Promise<boolean> {
-    await delay(500);
-    // In real app, would delete from persistent storage
-    return [...comprehensiveQuestions, ...comprehensiveTheoryQuestions].find(q => q.id === id) !== undefined;
+    const questions = await this.getAllQuestions();
+    const index = questions.findIndex(q => q.id === id);
+    if (index !== -1) {
+      questions.splice(index, 1);
+      return true;
+    }
+    return false;
   }
 }
 
-// Mock answer evaluation
-export class MockAnswerEvaluator {
-  static async evaluateAnswer(
-    questionId: string,
-    userAnswer: string
-  ): Promise<{
-    isCorrect: boolean;
-    score: number;
-    feedback: string;
-    correctAnswer: string;
-  }> {
-    await delay(1000 + Math.random() * 2000); // Simulate evaluation time
-
-    const question = [...comprehensiveQuestions, ...comprehensiveTheoryQuestions].find(q => q.id === questionId);
-    if (!question) {
-      return {
-        isCorrect: false,
-        score: 0,
-        feedback: 'Question not found',
-        correctAnswer: ''
-      };
-    }
-
-    // Simple evaluation logic
-    const userAnswerLower = userAnswer.toLowerCase().trim();
-    const correctAnswerLower = question.correctAnswer.toLowerCase();
-
-    let isCorrect = false;
-    let score = 0;
-
-    if (question.type === 'mcq') {
-      isCorrect = userAnswerLower === correctAnswerLower.toLowerCase();
-      score = isCorrect ? 100 : 0;
-    } else {
-      // For short and long answers, check for key terms
-      const keyTerms = correctAnswerLower.split(/[,.\s]+/).filter(term => term.length > 3);
-      const matchedTerms = keyTerms.filter(term => userAnswerLower.includes(term));
-      
-      const matchPercentage = (matchedTerms.length / keyTerms.length) * 100;
-      score = Math.round(matchPercentage);
-      isCorrect = score >= 70; // Consider correct if 70% match
-    }
-
-    let feedback = '';
-    if (score >= 90) {
-      feedback = 'Excellent answer! You demonstrated a thorough understanding.';
-    } else if (score >= 70) {
-      feedback = 'Good answer! You covered most key points.';
-    } else if (score >= 50) {
-      feedback = 'Partial answer. You got some points but missed important details.';
-    } else {
-      feedback = 'Incorrect answer. Please review the explanation and try again.';
-    }
-
-    return {
-      isCorrect,
-      score,
-      feedback,
-      correctAnswer: question.correctAnswer
-    };
-  }
-
-  static async submitAnswer(
-    questionId: string,
-    userAnswer: string,
-    timeTaken: number
-  ): Promise<Submission> {
-    const user = MockAuth.getCurrentUser();
-    if (!user) throw new Error('Not authenticated');
-
-    const evaluation = await this.evaluateAnswer(questionId, userAnswer);
-    
-    const submission: Submission = {
-      id: `sub-${Date.now()}`,
-      userId: user.id,
-      questionId,
-      problemId: questionId, // Use questionId as problemId for theory questions
-      answer: userAnswer,
-      isCorrect: evaluation.isCorrect,
-      score: evaluation.score,
-      timestamp: new Date(),
-      timeTaken,
-      status: evaluation.isCorrect ? 'Accepted' : 'Wrong Answer',
-      language: 'text', // Theory questions are text-based
-      runtime: 0, // Not applicable for theory questions
-      memory: 0 // Not applicable for theory questions
-    };
-
-    mockSubmissions.push(submission);
-
-    // Update user's solved questions if correct
-    if (evaluation.isCorrect && !user.solvedQuestions.includes(questionId)) {
-      user.solvedQuestions.push(questionId);
-      user.submissions++;
-      localStorage.setItem('current_user', JSON.stringify(user));
-    }
-
-    return submission;
-  }
-}
-
-// Mock submission API
+// Mock Submission API
 export class MockSubmissionAPI {
-  static async getUserSubmissions(userId: string): Promise<Submission[]> {
-    await delay(300);
-    return mockSubmissions.filter(s => s.userId === userId);
+  private static submissions: Submission[] = mockSubmissions;
+
+  static async submitSolution(submission: Omit<Submission, 'id' | 'timestamp'>): Promise<Submission> {
+    await delay(1000);
+    const newSubmission: Submission = {
+      ...submission,
+      id: Date.now().toString(),
+      timestamp: new Date()
+    };
+    this.submissions.push(newSubmission);
+    return newSubmission;
   }
 
-  static async getSubmission(id: string): Promise<Submission | null> {
-    await delay(200);
-    return mockSubmissions.find(s => s.id === id) || null;
+  static async getUserSubmissions(userId: string): Promise<Submission[]> {
+    await delay(500);
+    return this.submissions.filter(submission => submission.userId === userId);
   }
 }
