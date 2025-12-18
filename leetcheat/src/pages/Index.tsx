@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/UI/card';
 import { Button } from '@/components/UI/button';
 import { Input } from '@/components/UI/input';
@@ -7,32 +7,36 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/UI/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/UI/dropdown-menu';
 import { Search, Filter, Code, Trophy, Users, BookOpen, LogIn, LogOut, User, Settings, Moon, Sun, ChevronDown } from 'lucide-react';
-import { TheoryQuestion, User as UserType } from '@/lib/mockData';
+import type { TheoryQuestion, User as UserType } from '@/types';
 import { MockAuth, MockQuestionAPI } from '@/lib/mockApi';
-import CodeSutraHeader from '@/components/CodeSutraHeader';
-import ProfessionalProblemCard from '@/components/ProfessionalProblemCard';
-import EnhancedFilters from '@/components/EnhancedFilters';
+import CodeSutraHeader from '@/components/features/layout/CodeSutraHeader';
+import ProfessionalProblemCard from '@/components/features/questions/ProfessionalProblemCard';
+import EnhancedFilters from '@/components/features/questions/EnhancedFilters';
+import { useNavigate } from 'react-router-dom';
 
-type PageType = 'questions' | 'question' | 'dashboard' | 'admin' | 'explore' | 'contest' | 'discuss';
+interface ProblemsProps {
+  currentUser: UserType | null;
+  setCurrentUser: (user: UserType | null) => void;
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
+}
 
-const isValidPage = (page: string): page is PageType => {
-  return ['questions', 'question', 'dashboard', 'admin', 'explore', 'contest', 'discuss'].includes(page);
-};
-
-export default function Index() {
+export default function Problems({
+  currentUser,
+  setCurrentUser,
+  theme,
+  toggleTheme,
+}: ProblemsProps) {
   const [questions, setQuestions] = useState<TheoryQuestion[]>([]);
   const [filteredQuestions, setFilteredQuestions] = useState<TheoryQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
-  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [authForm, setAuthForm] = useState({ name: '', email: '', password: '' });
-  const [currentPage, setCurrentPage] = useState<PageType>('questions');
-  const [selectedQuestionId, setSelectedQuestionId] = useState<string>('');
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const navigate = useNavigate();
   
   // Enhanced filters state
   const [filters, setFilters] = useState({
@@ -47,18 +51,11 @@ export default function Index() {
 
   useEffect(() => {
     loadQuestions();
-    setCurrentUser(MockAuth.getCurrentUser());
-    // Initialize theme
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-      document.documentElement.classList.toggle('dark', savedTheme === 'dark');
-    }
   }, []);
 
   const loadQuestions = async () => {
     try {
-      const data = await MockQuestionAPI.getQuestions();
+      const data = await MockQuestionAPI.getAllQuestions();
       setQuestions(data);
       setLoading(false);
     } catch (error) {
@@ -86,16 +83,16 @@ export default function Index() {
       filtered = filtered.filter(q => q.category === categoryFilter);
     }
 
+    // Update the filteredQuestions state
     setFilteredQuestions(filtered);
+    
+    return filtered;
   }, [questions, searchTerm, difficultyFilter, categoryFilter]);
 
-  useEffect(() => {
-    filterQuestions();
-  }, [filterQuestions]);
+  const filteredQuestionsData = useMemo(() => filterQuestions(), [filterQuestions]);
 
   const handleSolveQuestion = (questionId: string) => {
-    setSelectedQuestionId(questionId);
-    setCurrentPage('question');
+    navigate(`/question/${questionId}`);
   };
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -126,98 +123,38 @@ export default function Index() {
     setCurrentUser(null);
   };
 
-  const getAllCategories = () => {
+  const getAllCategories = useMemo(() => {
     const categories = new Set<string>();
     questions.forEach(q => categories.add(q.category));
     return Array.from(categories);
-  };
+  }, [questions]);
 
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-    document.documentElement.classList.toggle('dark', newTheme === 'dark');
-  };
+  // Using the filteredQuestions state variable
+  const getFilteredQuestionsCount = useCallback(() => {
+    return filteredQuestions.length;
+  }, [filteredQuestions]);
 
-  if (currentPage === 'question') {
-    // Dynamically import and render Question component
-    const QuestionPage = React.lazy(() => import('./Question'));
+  // Creating a memoized component to display user stats
+  const UserStats = memo(({ user }: { user: UserType | null }) => {
+    if (!user) return null;
+    
     return (
-      <React.Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-        <QuestionPage 
-          questionId={selectedQuestionId} 
-          onBack={() => setCurrentPage('questions')}
-          currentUser={currentUser}
-        />
-      </React.Suspense>
+      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+        <span>Welcome, {user.name}!</span>
+        <Badge variant="secondary" className="text-xs">
+          {user.role}
+        </Badge>
+      </div>
     );
-  }
+  });
 
-  if (currentPage === 'explore') {
-    const ExplorePage = React.lazy(() => import('./Explore'));
-    return (
-      <React.Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-        <ExplorePage 
-          onBack={() => setCurrentPage('questions')}
-          onSolveQuestion={handleSolveQuestion}
-        />
-      </React.Suspense>
-    );
-  }
-
-  if (currentPage === 'contest') {
-    const ContestPage = React.lazy(() => import('./Contest'));
-    return (
-      <React.Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-        <ContestPage 
-          onBack={() => setCurrentPage('questions')}
-        />
-      </React.Suspense>
-    );
-  }
-
-  if (currentPage === 'discuss') {
-    const DiscussPage = React.lazy(() => import('./Discuss'));
-    return (
-      <React.Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-        <DiscussPage 
-          onBack={() => setCurrentPage('questions')}
-        />
-      </React.Suspense>
-    );
-  }
-
-  if (currentPage === 'dashboard') {
-    const DashboardPage = React.lazy(() => import('./Dashboard'));
-    return (
-      <React.Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-        <DashboardPage 
-          currentUser={currentUser}
-          onBack={() => setCurrentPage('questions')}
-        />
-      </React.Suspense>
-    );
-  }
-
-  if (currentPage === 'admin' && currentUser?.role === 'admin') {
-    const AdminPage = React.lazy(() => import('./Admin'));
-    return (
-      <React.Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-        <AdminPage 
-          currentUser={currentUser}
-          onBack={() => setCurrentPage('questions')}
-        />
-      </React.Suspense>
-    );
-  }
+  UserStats.displayName = 'UserStats';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* CodeSutra Header */}
       <CodeSutraHeader
         currentUser={currentUser}
-        currentPage={currentPage}
-        setCurrentPage={(page: string) => setCurrentPage(page as PageType)}
         onLogin={() => setShowAuthDialog(true)}
         onLogout={handleLogout}
         theme={theme}
@@ -225,10 +162,10 @@ export default function Index() {
       />
 
       {/* Main Content */}
-      <div className="flex">
+      <div className="flex flex-col lg:flex-row">
         {/* Enhanced Filters Sidebar */}
-        <div className="hidden lg:block w-80 flex-shrink-0">
-          <div className="sticky top-20 p-4">
+        <aside className="w-full lg:w-80 lg:flex-shrink-0 order-2 lg:order-1">
+          <div className="lg:sticky lg:top-20 p-4 space-y-6">
             <EnhancedFilters
               filters={filters}
               onFiltersChange={setFilters}
@@ -242,47 +179,129 @@ export default function Index() {
                 spaceComplexity: []
               })}
             />
-          </div>
 
-          {/* Stats Bar */}
-          <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-blue-600 text-white p-6 rounded-xl shadow-xl mb-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-2xl font-bold">{filteredQuestions.length}</div>
-                <div className="text-sm text-white/90">Total Questions</div>
-              </div>
-              <div>
-                <div className="text-lg font-semibold text-emerald-300">
-                  {filteredQuestions.filter(q => q.difficulty === 'Easy').length}
+            {/* Stats Bar */}
+            <Card className="bg-gradient-to-r from-orange-600 via-orange-500 to-blue-600 text-white rounded-xl shadow-xl">
+              <CardContent className="p-4 sm:p-6">
+                <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-between gap-4">
+                  <div className="text-center sm:text-left">
+                    <div className="text-xl sm:text-2xl font-bold">{getFilteredQuestionsCount()}</div>
+                    <div className="text-xs sm:text-sm text-white/90">Total Questions</div>
+                  </div>
+                  <div className="text-center sm:text-left">
+                    <div className="text-base sm:text-lg font-semibold text-emerald-300">
+                      {filteredQuestionsData.filter(q => q.difficulty === 'Easy').length}
+                    </div>
+                    <div className="text-xs sm:text-sm text-white/90">Easy Questions</div>
+                  </div>
+                  <div className="text-center sm:text-left">
+                    <div className="text-base sm:text-lg font-semibold text-amber-300">
+                      {filteredQuestionsData.filter(q => q.difficulty === 'Medium').length}
+                    </div>
+                    <div className="text-xs sm:text-sm text-white/90">Medium Questions</div>
+                  </div>
+                  <div className="text-center sm:text-left">
+                    <div className="text-base sm:text-lg font-semibold text-rose-300">
+                      {filteredQuestionsData.filter(q => q.difficulty === 'Hard').length}
+                    </div>
+                    <div className="text-xs sm:text-sm text-white/90">Hard Questions</div>
+                  </div>
                 </div>
-                <div className="text-sm text-white/90">Easy</div>
-              </div>
-              <div>
-                <div className="text-lg font-semibold text-amber-300">
-                  {filteredQuestions.filter(q => q.difficulty === 'Medium').length}
+              </CardContent>
+            </Card>
+
+            {/* Quick Navigation */}
+            <Card className="bg-white dark:bg-slate-800">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <BookOpen className="w-5 h-5 text-blue-600" />
+                  Quick Navigation
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-2 h-12"
+                    onClick={() => navigate('/explore')}
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    Explore
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center gap-2 h-12"
+                    onClick={() => navigate('/contest')}
+                  >
+                    <Trophy className="w-4 h-4" />
+                    Contests
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center gap-2 h-12"
+                    onClick={() => navigate('/discuss')}
+                  >
+                    <Users className="w-4 h-4" />
+                    Discuss
+                  </Button>
+                  {currentUser ? (
+                    <>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            className="flex items-center gap-2 h-12"
+                          >
+                            <Code className="w-4 h-4" />
+                            View Profile
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>User Profile</DialogTitle>
+                          </DialogHeader>
+                          <div className="py-4">
+                            <p>Name: {currentUser?.name}</p>
+                            <p>Email: {currentUser?.email}</p>
+                            <p>Role: {currentUser?.role}</p>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                      <Button 
+                        variant="outline" 
+                        className="flex items-center gap-2 h-12"
+                        onClick={handleLogout}
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Logout
+                      </Button>
+                    </>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      className="flex items-center gap-2 h-12"
+                      onClick={() => setShowAuthDialog(true)}
+                    >
+                      <User className="w-4 h-4" />
+                      Login
+                    </Button>
+                  )}
                 </div>
-                <div className="text-sm text-white/90">Medium</div>
-              </div>
-              <div>
-                <div className="text-lg font-semibold text-rose-300">
-                  {filteredQuestions.filter(q => q.difficulty === 'Hard').length}
-                </div>
-                <div className="text-sm text-white/90">Hard</div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Search and Sort */}
-            <div className="flex items-center gap-3 mt-4">
-              <div className="relative">
+            <div className="flex flex-col sm:flex-row items-center gap-3 mt-4">
+              <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70 w-4 h-4" />
                 <Input
                   placeholder="Search problems..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64 h-10 text-sm bg-white/20 border-white/30 text-white placeholder-white/70"
+                  className="pl-10 w-full sm:w-64 h-10 text-sm bg-white/20 border-white/30 text-white placeholder-white/70"
                 />
               </div>
-              <select className="px-3 py-2 text-sm border border-white/30 rounded-lg bg-white/20 text-white">
+              <select className="px-3 py-2 text-sm border border-white/30 rounded-lg bg-white/20 text-white w-full sm:w-auto">
                 <option>Most Recent</option>
                 <option>Most Popular</option>
                 <option>Hardest</option>
@@ -290,6 +309,81 @@ export default function Index() {
                 <option>Acceptance Rate</option>
               </select>
             </div>
+          </div>
+        </aside>
+
+        {/* Main Content Area */}
+        <main className="flex-1 order-1 lg:order-2 p-4 lg:p-6">
+          {/* Mobile Filter Button */}
+          <div className="md:hidden flex items-center justify-between mb-4">
+            <Button variant="outline" size="sm" className="flex items-center gap-2">
+              <Filter className="w-4 h-4" />
+              Filters
+            </Button>
+            
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs">
+                {filteredQuestionsData.length} Questions
+              </Badge>
+              
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={toggleTheme}
+                className="p-2"
+              >
+                {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              </Button>
+            </div>
+          </div>
+
+          <div className="hidden md:flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="flex items-center gap-1">
+                  <Filter className="w-4 h-4" />
+                  Filter
+                  <ChevronDown className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => setDifficultyFilter('')}>
+                  <span>All Difficulties</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDifficultyFilter('Easy')}>
+                  <span className="text-green-600">Easy</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDifficultyFilter('Medium')}>
+                  <span className="text-yellow-600">Medium</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDifficultyFilter('Hard')}>
+                  <span className="text-red-600">Hard</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setCategoryFilter('')}>
+                  <span>All Categories</span>
+                </DropdownMenuItem>
+                {getAllCategories.map(category => (
+                  <DropdownMenuItem key={category} onClick={() => setCategoryFilter(category)}>
+                    <span>{category}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => {
+                setDifficultyFilter('');
+                setCategoryFilter('');
+              }}
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+            
+            {/* Display user stats using the memoized component */}
+            <UserStats user={currentUser} />
           </div>
 
           {/* Problem Cards Grid */}
@@ -300,7 +394,7 @@ export default function Index() {
                 <p className="text-gray-600 dark:text-gray-400">Loading problems...</p>
               </div>
             </div>
-          ) : filteredQuestions.length === 0 ? (
+          ) : filteredQuestionsData.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-gray-500 dark:text-gray-400 mb-4">
                 <Search className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
@@ -323,8 +417,8 @@ export default function Index() {
               </Button>
             </div>
           ) : (
-            <div className="grid gap-4">
-              {filteredQuestions.map((question) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {filteredQuestionsData.map((question) => (
                 <ProfessionalProblemCard
                   key={`problem-card-${question.id}`}
                   question={question}
@@ -334,25 +428,36 @@ export default function Index() {
               ))}
             </div>
           )}
-        </div>
+        </main>
       </div>
 
       {/* Auth Dialog */}
       <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>
-              {authMode === 'login' ? 'Sign In' : 'Create Account'}
+            <DialogTitle className="flex items-center gap-2">
+              {authMode === 'login' ? (
+                <>
+                  <LogIn className="w-5 h-5" />
+                  Sign In
+                </>
+              ) : (
+                <>
+                  <User className="w-5 h-5" />
+                  Register
+                </>
+              )}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleAuth} className="space-y-4">
             {authMode === 'register' && (
               <div>
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name">Name</Label>
                 <Input
                   id="name"
                   value={authForm.name}
                   onChange={(e) => setAuthForm({...authForm, name: e.target.value})}
+                  placeholder="Enter your name"
                   required
                 />
               </div>
@@ -364,6 +469,7 @@ export default function Index() {
                 type="email"
                 value={authForm.email}
                 onChange={(e) => setAuthForm({...authForm, email: e.target.value})}
+                placeholder="Enter your email"
                 required
               />
             </div>
@@ -374,22 +480,25 @@ export default function Index() {
                 type="password"
                 value={authForm.password}
                 onChange={(e) => setAuthForm({...authForm, password: e.target.value})}
+                placeholder="Enter your password"
                 required
               />
             </div>
             <Button type="submit" className="w-full">
-              {authMode === 'login' ? 'Sign In' : 'Create Account'}
+              {authMode === 'login' ? 'Sign In' : 'Register'}
             </Button>
+            <div className="text-center text-sm">
+              <button
+                type="button"
+                onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+                className="text-blue-600 hover:underline"
+              >
+                {authMode === 'login' 
+                  ? "Don't have an account? Register" 
+                  : "Already have an account? Sign In"}
+              </button>
+            </div>
           </form>
-          <div className="text-center text-sm text-gray-600 dark:text-gray-400 mt-4">
-            {authMode === 'login' ? "Don't have an account? " : "Already have an account? "}
-            <button
-              onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
-              className="text-blue-600 hover:text-blue-500 font-medium"
-            >
-              {authMode === 'login' ? 'Sign Up' : 'Sign In'}
-            </button>
-          </div>
         </DialogContent>
       </Dialog>
     </div>
